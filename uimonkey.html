@@ -1,0 +1,67 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" type="text/css" href="http://fav/css/style.css" media="all" />
+	<title>UIMonkey</title>
+</head>
+<style>
+* {
+font-size: small;
+}
+ol { list-style-type: none; }
+textarea {
+display: block;
+}
+</style>
+<body>
+<h1>UIMonkey Console</h1>
+<form action="javascript:void()" name="cmd" >
+<textarea id="jscode" name="jscode" rows="10" cols="80"></textarea>
+Ctrl+Enter/meta+Enter to evaluate.
+<!--
+<input type="submit" name="exec" value="Execute" />
+-->
+</form>
+
+<ol id="responses">
+</ol>
+<hr />
+UIMonkey &copy;2008 ku
+<script type="text/javascript" charset="utf-8" >
+window.onload = function () {
+	var e = document.getElementById('jscode');
+	e.focus();
+
+	var f = document.forms.cmd;
+
+	function exec (ev) {
+		var jscode = f.jscode.value;
+
+		var req = new XMLHttpRequest();
+		req.open("POST", "/", false);
+		req.send(jscode);
+
+		var t = req.responseText;
+
+		var li = document.createElement('li');
+		var text = document.createTextNode("> " + t);
+		li.appendChild(text);
+
+		var ol = document.getElementById('responses');
+		ol.insertBefore(li, ol.firstChild);
+
+		return false;
+	}
+
+	f.addEventListener('keypress', function (ev) {
+		var b = (ev.keyCode == 13  && ( ev.ctrlKey || ev.metaKey));
+		if ( b ) {
+			exec(ev);
+			ev.preventDefault();
+		}
+	}, false);
+}
+</script>
+</body>
+</html>
