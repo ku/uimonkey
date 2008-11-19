@@ -35,6 +35,10 @@
 - (void)viewDidLoad {
 	httpd = [	[Httpd alloc] initWithPort:38880];
 
+	SEL method = @selector(setAlpha:);
+	NSMethodSignature* sig = [self methodSignatureForSelector:method];
+	const char* typetext = [sig getArgumentTypeAtIndex:2];
+
     [super viewDidLoad];
 }
 
@@ -51,6 +55,9 @@
     // Release anything that's not essential, such as cached data
 }
 
+-(void)stopHttpd{
+	[httpd release];
+}
 
 - (void)dealloc {
 	[httpd release];

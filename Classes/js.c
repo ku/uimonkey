@@ -70,9 +70,9 @@ my_ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report)
 
 extern JSClass global_class;
 
-JSRuntime *rt;
-JSContext *cx;
-JSObject *glob;
+static JSRuntime *rt;
+static JSContext *cx;
+static JSObject *glob;
 
 int js_init() {
 
@@ -105,26 +105,35 @@ const char* js_run(const char* buffer) {
 	int startline = 1;
 //	 if (!JS_DefineFunctions(cx, glob, shell_functions))
 //		 return 1;
-	JSScript * script = JS_CompileScript(cx, obj, buffer, strlen(buffer), "typein",
+	JSScript * script = JS_CompileScript(cx, obj, buffer, strlen(buffer), "uimonkey",
 			 startline);
 
-			  jsval result;
-			  JSBool ok;
-	  ok = JS_ExecuteScript(cx, obj, script, &result);
+	if ( !script ) 
+		return NULL;
 
-	 JSString *str = JS_ValueToString(cx, result);
-	 const char * p = JS_GetStringBytes(str);
-	 int n = strlen(p);
-	 char* ret = malloc(n+1);
-	 memcpy(ret, p, n);
-	 ret[n] = 0;
-	 JS_DestroyScript(cx, script);
-/*
-	  if (str) {
-		  fprintf(stdout, "%s\n", JS_GetStringBytes(str));
-	  } else
-	    JS_DestroyScript(cx, script);
-*/
-	return ret;
+	jsval result;
+	JSBool ok  = JS_ExecuteScript(cx, obj, script, &result);
+	
+	char* r = NULL;
+	if (ok ) {
+		if ( result == JSVAL_VOID) {
+			const char *err_msg = "(void)";
+			r = (char*)malloc(strlen(err_msg) + 1);
+			strcpy(r, err_msg);
+		} else {
+			JSString *str = JS_ValueToString(cx, result);
+			const char * p = JS_GetStringBytes(str);
+			int n = strlen(p);
+			r = malloc(n+1);
+			memcpy(r, p, n);
+			r[n] = 0;
+		}
+	} else {
+		const char *err_msg = "evaluation failed.";
+		r = (char*)malloc(strlen(err_msg) + 1);
+		strcpy(r, err_msg);
+	}
+	JS_DestroyScript(cx, script);
+	return r;
 }
 

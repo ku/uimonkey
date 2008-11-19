@@ -55,6 +55,8 @@
 		B842A75A0ED25C10006772E2 /* jsxml.c in Sources */ = {isa = PBXBuildFile; fileRef = B842A72F0ED25C10006772E2 /* jsxml.c */; };
 		B842A75B0ED25C10006772E2 /* prmjtime.c in Sources */ = {isa = PBXBuildFile; fileRef = B842A7310ED25C10006772E2 /* prmjtime.c */; };
 		B842A8600ED26C76006772E2 /* Httpd.m in Sources */ = {isa = PBXBuildFile; fileRef = B842A85F0ED26C76006772E2 /* Httpd.m */; };
+		B8AF98480ED3E7DD00F1118A /* converters.c in Sources */ = {isa = PBXBuildFile; fileRef = B8AF98460ED3E7DD00F1118A /* converters.c */; };
+		B8AF9AC90ED4229500F1118A /* china2008.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B8AF9AC80ED4229500F1118A /* china2008.jpg */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -73,10 +75,10 @@
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B82FD9AE0ED2968E0090C252 /* js.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = js.c; sourceTree = "<group>"; };
 		B82FD9AF0ED2968E0090C252 /* js.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = js.h; sourceTree = "<group>"; };
-		B82FD9E40ED29ADD0090C252 /* app.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = app.c; sourceTree = "<group>"; };
-		B82FD9E50ED29ADD0090C252 /* app.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = app.h; sourceTree = "<group>"; };
-		B82FDA1F0ED2A7D30090C252 /* cocoaconnect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cocoaconnect.h; sourceTree = "<group>"; };
-		B82FDA200ED2A7D30090C252 /* cocoaconnect.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = cocoaconnect.m; sourceTree = "<group>"; };
+		B82FD9E40ED29ADD0090C252 /* app.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = app.c; path = Classes/app.c; sourceTree = "<group>"; };
+		B82FD9E50ED29ADD0090C252 /* app.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = app.h; path = Classes/app.h; sourceTree = "<group>"; };
+		B82FDA1F0ED2A7D30090C252 /* cocoaconnect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cocoaconnect.h; path = Classes/cocoaconnect.h; sourceTree = "<group>"; };
+		B82FDA200ED2A7D30090C252 /* cocoaconnect.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = cocoaconnect.m; path = Classes/cocoaconnect.m; sourceTree = "<group>"; };
 		B842A6DE0ED25C10006772E2 /* jsapi.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = jsapi.c; sourceTree = "<group>"; };
 		B842A6DF0ED25C10006772E2 /* jsapi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jsapi.h; sourceTree = "<group>"; };
 		B842A6E00ED25C10006772E2 /* jsarena.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = jsarena.c; sourceTree = "<group>"; };
@@ -162,6 +164,9 @@
 		B842A7330ED25C10006772E2 /* resource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = resource.h; sourceTree = "<group>"; };
 		B842A85E0ED26C76006772E2 /* Httpd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Httpd.h; sourceTree = "<group>"; };
 		B842A85F0ED26C76006772E2 /* Httpd.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Httpd.m; sourceTree = "<group>"; };
+		B8AF98460ED3E7DD00F1118A /* converters.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = converters.c; path = Classes/converters.c; sourceTree = "<group>"; };
+		B8AF98470ED3E7DD00F1118A /* converters.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = converters.h; path = Classes/converters.h; sourceTree = "<group>"; };
+		B8AF9AC80ED4229500F1118A /* china2008.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = china2008.jpg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -181,10 +186,6 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
-				B82FDA1F0ED2A7D30090C252 /* cocoaconnect.h */,
-				B82FDA200ED2A7D30090C252 /* cocoaconnect.m */,
-				B82FD9E40ED29ADD0090C252 /* app.c */,
-				B82FD9E50ED29ADD0090C252 /* app.h */,
 				B82FD9AE0ED2968E0090C252 /* js.c */,
 				B82FD9AF0ED2968E0090C252 /* js.h */,
 				B842A85E0ED26C76006772E2 /* Httpd.h */,
@@ -208,6 +209,12 @@
 		29B97314FDCFA39411CA2CEA /* CustomTemplate */ = {
 			isa = PBXGroup;
 			children = (
+				B8AF98460ED3E7DD00F1118A /* converters.c */,
+				B8AF98470ED3E7DD00F1118A /* converters.h */,
+				B82FDA200ED2A7D30090C252 /* cocoaconnect.m */,
+				B82FDA1F0ED2A7D30090C252 /* cocoaconnect.h */,
+				B82FD9E40ED29ADD0090C252 /* app.c */,
+				B82FD9E50ED29ADD0090C252 /* app.h */,
 				080E96DDFE201D6D7F000001 /* Classes */,
 				29B97315FDCFA39411CA2CEA /* Other Sources */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
@@ -230,6 +237,7 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				B8AF9AC80ED4229500F1118A /* china2008.jpg */,
 				2899E5210DE3E06400AC0155 /* uimonkeyViewController.xib */,
 				28AD733E0D9D9553002E5188 /* MainWindow.xib */,
 				8D1107310486CEB800E47090 /* Info.plist */,
@@ -389,6 +397,7 @@
 			files = (
 				28AD733F0D9D9553002E5188 /* MainWindow.xib in Resources */,
 				2899E5220DE3E06400AC0155 /* uimonkeyViewController.xib in Resources */,
+				B8AF9AC90ED4229500F1118A /* china2008.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -442,6 +451,7 @@
 				B82FD9B00ED2968E0090C252 /* js.c in Sources */,
 				B82FD9E60ED29ADD0090C252 /* app.c in Sources */,
 				B82FDA210ED2A7D30090C252 /* cocoaconnect.m in Sources */,
+				B8AF98480ED3E7DD00F1118A /* converters.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

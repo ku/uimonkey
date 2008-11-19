@@ -17,13 +17,14 @@
 @synthesize viewController;
 
 - (void)applicationDidFinishLaunching:(UIApplication *)application {    
-	CGRect frame = [window frame]	;
-	window.tag = 15;
-    // Override point for customization after app launch    
+  // Override point for customization after app launch    
     [window addSubview:viewController.view];
     [window makeKeyAndVisible];
 }
 
+- (void)applicationWillTerminate:(UIApplication *)application {
+	[viewController stopHttpd];
+}
 
 - (void)dealloc {
     [viewController release];

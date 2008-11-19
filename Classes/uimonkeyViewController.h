@@ -12,6 +12,7 @@
 
 	id httpd;
 }
+-(void)stopHttpd;
 
 @end
 

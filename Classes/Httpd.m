@@ -7,6 +7,8 @@
 
 #include "js.h"
 
+const char* html;
+
 @implementation Httpd
 -(id)initWithPort:(int)n {
 	if (self = [super init]) {
@@ -99,6 +101,18 @@
 		NSString* path = [[NSString alloc] initWithBytes:start
 			length:n encoding:NSASCIIStringEncoding];
 		NSLog(@"get %@", path);
+
+		const char* header = "HTTP/1.0 200 OK\r\n\r\n";
+
+		const char* nl = "\n";
+		NSMutableData* d = [NSMutableData dataWithBytes:header length:strlen(header)];
+		[d appendBytes:html length:strlen(html)];
+		[d appendBytes:nl length:strlen(nl)];
+
+		[fh writeData:d];
+
+		found = YES;
+
 	} else 	if ( memcmp(p, "POST", 4) == 0) {
 		//NSString* s = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
 		const char* eoh = strstr(p, "\r\n\r\n");
@@ -115,11 +129,10 @@
 			p[n] = '\0';
 			memcpy(p, eoh, n);
 			const char* res = js_run(p);
-			free(p);
-
 			const char* header = "HTTP/1.0 200 OK\r\n\r\n";
 			const char* nl = "\n";
 			NSMutableData* d = [NSMutableData dataWithBytes:header length:strlen(header)];
+			
 			[d appendBytes:res length:strlen(res)];
 			[d appendBytes:nl length:strlen(nl)];
 
@@ -127,6 +140,9 @@
 			//fprintf(stdout, "%s\n", res);
 			//
 			//
+			free(p);
+			free(res);
+			
 			found = YES;
 		}
 	}
@@ -144,6 +160,10 @@
 
 }
 
-
-
 @end
+/*
+ cat ../uimonkey.html | perl -nle '/^\s*$/ or s/"/\\"/g, print qq{"$_\\n"\\} ' >! html.h; echo >> html.h
+*/
+const char* html =
+#include "html.h"
+;

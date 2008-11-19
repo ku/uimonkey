@@ -4,6 +4,9 @@
 #include <CoreGraphics/CGGeometry.h>
 #include <CoreGraphics/CGAffineTransform.h>
 
+#include "converters.h";
+
+
 static JSBool _getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp);
 static JSBool _setProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp);
 //static JSBool _resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp) ;
@@ -13,13 +16,13 @@ _convert(JSContext *cx, JSObject *obj, JSType type, jsval *vp);
 
 
 JSClass wrapper_class = {
-"ObjcWrapper", JSCLASS_NEW_RESOLVE | JSCLASS_HAS_PRIVATE,
-JS_PropertyStub,  JS_PropertyStub,
-_getProperty,
-_setProperty,
-__enumerate, (JSResolveOp) __resolve,
-_convert,   JS_FinalizeStub,
-JSCLASS_NO_OPTIONAL_MEMBERS
+	"ObjcWrapper", JSCLASS_NEW_RESOLVE | JSCLASS_HAS_PRIVATE,
+	JS_PropertyStub,  JS_PropertyStub,
+	_getProperty,
+	_setProperty,
+	__enumerate, (JSResolveOp) __resolve,
+	_convert,   JS_FinalizeStub,
+	JSCLASS_NO_OPTIONAL_MEMBERS
 };
 
 
@@ -29,14 +32,18 @@ enum string_tinyid {
 	TID_WINDOWS			= -3,
 	TID_KEYWINDOW		= -4
 };
-/*
-static JSPropertySpec _props[] = {
-	{"_id",			TID_OBJC_ID, JSPROP_READONLY, 0,0},
-	{"windows",		TID_WINDOWS, JSPROP_ENUMERATE, 0,0},
-	{"keyWindow",	TID_KEYWINDOW, JSPROP_ENUMERATE, 0,0},
-	{0,0,0,0,0}
+
+void* (*__converters[])(JSContext*, jsval, void*, int) = {
+	NULL,
+	__convert_to_objc_id,
+	__convert_to_int,
+	__convert_to_float,
+	__convert_to_CGAffineTransform,
+	__convert_to_CGRect,
+	__convert_to_CGPoint,
+	__convert_to_CGSize,
+	NULL
 };
-*/
 
 JS_STATIC_DLL_CALLBACK(JSBool)
 _objc_wrapper_to_string(JSContext *cx, JSObject *obj,
@@ -65,117 +72,97 @@ _objc_wrapper_to_string(JSContext *cx, JSObject *obj,
 	return JS_TRUE;
 }
 
+static JSBool __invoke_objc_method(const char* selector_name, JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *vp) {
+	METHOD_CALL_CONTEXT* mccx = (METHOD_CALL_CONTEXT*)malloc(sizeof(METHOD_CALL_CONTEXT));
+	mccx->object = JSOBJECT_TO_OBJCID(cx, obj);
+	mccx->selector_name = selector_name;
+	mccx->passed_args = argc;
+	
+	if ( ! cocoaconnect_validate_method_call(mccx) )
+		return JS_FALSE;
+	
+	void** args = (void*)malloc(argc);
+	memset(args, 0, argc);
+	mccx->args = args;
+	
+	for (int i = 0; i < argc; i++) {
+		int size;
+		int type = cocoaconnect_argument_type(mccx, i, &size);
 
-JSObject* jsObjectWithObjcObject(JSContext* cx, JSObject* obj, const char* name, void* objc_id) {
-	JSObject* prop = JS_DefineObject(cx, obj, name,
-		&wrapper_class, NULL, JSPROP_PERMANENT);
+		void * arg_buffer = malloc(size);
+
+		void* arg = __converters[type](cx, argv[i], arg_buffer, size);
+		if ( arg == NULL ) {
+			args[i] = arg_buffer;
+			goto cleanup;
+		}
+		args[i] = arg;
+	}
+
+	void* ret = cocoaconnect_invoke(mccx);
+
+	// ret is NULL if the method returns NULL.
+
+	if ( ret ) {
+		native_to_jsval(cx, obj, mccx->return_type, ret, vp);
+	}
+cleanup:
+	for (int i = 0; i < argc; i++) {
+		void* p = (mccx->args[i]);
+		if ( p )
+			free(p);
+	}
+	free(args);
+	return JS_TRUE;
+}
+
+
+JS_STATIC_DLL_CALLBACK(JSBool)
+_objc_method_invocation_wrapper(JSContext *cx, JSObject *obj,
+                           uintN argc, jsval *argv, jsval *vp)
+{
+	jsval funval = (argv[-2]);
+
+	jsval v;
+	if ( !JS_GetProperty(cx, JSVAL_TO_OBJECT( funval), "name", &v) ) {
+		return JS_FALSE;
+	}
+	const char* selector_name = JS_GetStringBytes(JSVAL_TO_STRING(v));
+
+	return __invoke_objc_method(
+		selector_name, 
+		cx, obj, argc, argv, vp
+	);
+}
+
+static JSObject* wrapObjcObject(JSContext* cx, JSObject* obj, const char* name, void* objc_id) {
+	JSObject* prop = JS_DefineObject(cx, obj, name, &wrapper_class, NULL, JSPROP_PERMANENT);
+
+	// keeping objc object pointer.
 	OBJ_SET_SLOT(cx, prop, JSSLOT_PRIVATE, INT_TO_JSVAL(objc_id));
 	
+	// overwrite toString to show Objective-C class name.
 	const char* method = "toString";
 	JSAtom* atom = js_Atomize(cx, method, strlen(method), 0);
 	if (!atom)
 		return NULL;
 
-	JSNative native = _objc_wrapper_to_string;
-
 	JSFunction *f = JS_NewFunction(
-		cx, native,
+		cx, _objc_wrapper_to_string,
 		0,  //args
 		0, // flags
 		NULL, 
 		NULL // name
-		);
+	);
 	jsval to_string_func = OBJECT_TO_JSVAL(f->object);
-
 	if (!OBJ_SET_PROPERTY(cx, prop, ATOM_TO_JSID(atom), &to_string_func)) {
 		return NULL;
 	}
 
+	jsval address = INT_TO_JSVAL( (unsigned int)objc_id );
+	JS_SetProperty(cx, obj, "__objc_addr", &address);
+
 	return prop;
-}
-jsval jsvalWithObjcObject(JSContext* cx, JSObject* obj, const char* name, void* objc_id) {
-	return 
-	OBJECT_TO_JSVAL(
-	jsObjectWithObjcObject(cx, obj, name, objc_id)
-					);
-}
-/*
-JSBool _resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp) {
-	JSBool resolved;
-
-	if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
-		return JS_FALSE;
-	if (resolved) {
-		*objp = obj;
-		return JS_TRUE;
-	}
-
-	return JS_TRUE;
-}
-*/
-
-
-#define SET_NUMBER_PROP(cx,obj,p_struct, name) \
-	JS_NewNumberValue(cx, (jsdouble)p_struct->name, &v); \
-	SET_PROP(cx, obj, #name, &v)
-
-
-#define SET_PROP(cx,obj,name,jsvp) \
-	OBJ_SET_PROPERTY(cx, obj, ATOM_TO_JSID(	\
-		js_Atomize(cx, name, strlen(name), 0)	\
-	), jsvp)
-
-// TODO: generate from header files.
-
-static JSObject* makeSize (JSContext* cx, const CGSize* p) {
-	jsval	v;
-	JSObject* obj = JS_NewObject(cx, NULL, NULL, NULL);
-
-	SET_NUMBER_PROP(cx, obj, p, width);
-	SET_NUMBER_PROP(cx, obj, p, height);
-
-//	JS_NewNumberValue(cx, (jsdouble)p->width, &v);
-//	SET_PROP(cx, obj, "width", &v);
-//
-//	JS_NewNumberValue(cx, (jsdouble)p->height, &v);
-//	SET_PROP(cx, obj, "height", &v);
-	
-	return obj;
-}
-
-static JSObject* makePoint (JSContext* cx, const CGPoint* p) {
-	jsval	v;
-	JSObject* obj = JS_NewObject(cx, NULL, NULL, NULL);
-
-	SET_NUMBER_PROP(cx, obj, p, x);
-	SET_NUMBER_PROP(cx, obj, p, y);
-	
-	return obj;
-}
-static JSObject* makeCGRect (JSContext* cx, const CGRect* p) {
-	jsval v;
-	JSObject* obj = JS_NewObject(cx, NULL, NULL, NULL);
-
-	JSObject* origin = makePoint(cx, &p->origin);
-	JSObject* size = makeSize(cx, &p->size);
-
-	v = OBJECT_TO_JSVAL(origin);
-	SET_PROP(cx, obj, "origin", &v);
-	v = OBJECT_TO_JSVAL(size);
-	SET_PROP(cx, obj, "size", &v);
-
-	return obj;
-}
-static JSObject* makeCGAffineTransform (JSContext* cx, const CGAffineTransform* p) {
-	jsval	v;
-	JSObject* obj = JS_NewObject(cx, NULL, NULL, NULL);
-	SET_NUMBER_PROP(cx, obj, p, a);
-	SET_NUMBER_PROP(cx, obj, p, b);
-	SET_NUMBER_PROP(cx, obj, p, c);
-	SET_NUMBER_PROP(cx, obj, p, d);
-	SET_NUMBER_PROP(cx, obj, p, tx);
-	SET_NUMBER_PROP(cx, obj, p, ty);
-	return obj;
 }
 
 static JSBool _getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
@@ -188,47 +175,66 @@ static JSBool _getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 		);
 		const char * msg = JS_GetStringBytes(JSVAL_TO_STRING(id));
 
-		char done = 0;
+		char done = CC_NOT_FONUD;
 		void* ret = try_message(objc_id, msg, &done);
-		if ( 0 ) {
+		if ( done == CC_NOT_FONUD ) {
 		} else if ( done == CC_VAL_OBJC_ID ) {
-			*vp = jsvalWithObjcObject(cx, obj, msg, ret);
-		} else if ( done == CC_VAL_INT ) {
-			unsigned int *v = (unsigned int*)ret;
-			*vp = INT_TO_JSVAL(*v);
+			void* objc_id = *((void **)ret);
+			*vp = OBJECT_TO_JSVAL( wrapObjcObject(cx, obj, msg, objc_id) );
 			free(ret);
-		} else if ( done == CC_VAL_FLOAT ) {
-			float *v = (float*)ret;
-			JS_NewNumberValue(cx, (jsdouble)*v, vp);
+		} else {
+			if ( done == CC_MAKE_FUNCTION ) {
+				OBJC_METHOD_INFO* info = (OBJC_METHOD_INFO*)ret;
+				JSFunction *fun = JS_NewFunction(
+					cx, _objc_method_invocation_wrapper,
+					info->args,  //number of args
+					0, // flags
+					NULL, // parent object
+					info->name
+				);
+				jsval f = OBJECT_TO_JSVAL( fun->object );
+				JS_SetProperty(cx, obj, msg, &f);
+				*vp = f;
+			} else {
+				native_to_jsval(cx, obj, done, ret, vp);
+			}
 			free(ret);
-		} else if ( done == CC_VAL_CGAFFINETRANSFORM ) {
-			CGAffineTransform *v = (CGAffineTransform*)ret;
-			JSObject* t = makeCGAffineTransform(cx, v);
-			*vp = OBJECT_TO_JSVAL(t);
-			free(ret);
-		} else if ( done == CC_VAL_CGRECT ) {
-			CGRect *v = (CGRect*)ret;
-			JSObject* t = makeCGRect(cx, v);
-			*vp = OBJECT_TO_JSVAL(t);
-			free(ret);
-		} else if ( done == CC_VAL_CGPOINT ) {
-		} else if ( done == CC_VAL_CGSIZE ) {
 		}
 	}
 
 	return JS_TRUE;
 }
 
+
+
 static JSBool
 _setProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 {
-	printf( "setting its property %s,",
-			JS_GetStringBytes(JS_ValueToString(cx, id)));
-	printf( " new value %s\n",
-			JS_GetStringBytes(JS_ValueToString(cx, *vp)));
-	 return JS_TRUE;
-}
+	if ( !JSVAL_IS_STRING(id) ) {
+		return JS_TRUE;
+	}
 
+	void* objc_id = JSOBJECT_TO_OBJCID(cx, obj);
+	const char * msg = JS_GetStringBytes(JSVAL_TO_STRING(id));
+
+	char firstChar = msg[0];
+	if ( !isalpha(firstChar)  )
+		return JS_TRUE;
+	firstChar &= ~0x20;
+
+	char setter_name[256];
+	sprintf(setter_name, "set%c%s:", firstChar, (msg+1));
+
+	int exsiting = is_method_existing(objc_id, setter_name);
+	if ( exsiting == 0 )
+		return JS_TRUE;
+
+	int argc = 1;
+	jsval* argv = (jsval*)malloc(sizeof(jsval) * argc);
+	argv[0] = *vp;
+
+	return __invoke_objc_method( setter_name, cx, obj, argc, argv, vp);
+}
 
 static JSBool
 _convert(JSContext *cx, JSObject *obj, JSType type, jsval *vp)
@@ -261,7 +267,7 @@ App(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 
 JSObject* app_register( JSContext *cx, JSObject *glob) {
 	void* objc_id = app_impl();
-	JSObject* obj = jsObjectWithObjcObject(cx, glob, "app", objc_id);
+	JSObject* obj = wrapObjcObject(cx, glob, "app", objc_id);
 	return obj;
 }
 
